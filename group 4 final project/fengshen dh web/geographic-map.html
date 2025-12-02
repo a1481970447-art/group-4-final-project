@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>地理图谱 - 封神演义数字人文研究平台</title>
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#9D2933', // 中国红
+            secondary: '#D4AF37', // 金色
+            dark: '#1C1C1C', // 深灰
+            light: '#F5F1E9', // 米白
+          },
+          fontFamily: {
+            song: ['"SimSun"', '"STSong"', 'serif'],
+            kai: ['"KaiTi"', '"STKaiti"', 'serif'],
+            sans: ['"Noto Sans SC"', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+      .bg-texture {
+        background-image: url('https://picsum.photos/id/175/1000/1000');
+        background-blend-mode: overlay;
+        background-size: cover;
+      }
+    }
+  </style>
+
+  <style>
+    .timeline-item {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .timeline-item:hover {
+      transform: translateX(5px);
+    }
+    .timeline-item.active {
+      border-left: 4px solid #D4AF37;
+      background-color: rgba(212, 175, 55, 0.1);
+    }
+    .location-marker {
+      transition: all 0.3s ease;
+    }
+    .location-marker:hover {
+      transform: scale(1.2);
+      z-index: 1000;
+    }
+    .path-animation {
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      animation: dash 5s linear forwards;
+    }
+    @keyframes dash {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .nav-link.active {
+      color: #D4AF37;
+    }
+    #navbar.scrolled {
+      background-color: rgba(28, 28, 28, 0.95);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+
+<body class="bg-dark text-light font-sans overflow-x-hidden">
+  <!-- Navigation Bar -->
+  <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 bg-transparent">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="text-secondary text-2xl font-kai font-bold">Investiture of the Gods</span>
+        <span class="hidden md:inline-block text-light/80 text-sm">Digital Humanities Research Platform</span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex space-x-8">
+        <a href="index.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Home</a>
+        <a href="magic-weapons.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Magic Weapons</a>
+        <a href="relationship-network.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Relationship Network</a>
+        <a href="geographic-map.html" class="nav-link text-secondary hover:text-secondary transition-colors duration-300 font-medium">Geographic Map</a>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <button id="menu-toggle" class="md:hidden text-light text-2xl">
+        <i class="fa fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div id="mobile-menu" class="md:hidden bg-dark/95 hidden absolute w-full">
+      <div class="container mx-auto px-4 py-4 flex flex-col space-y-4">
+        <a href="index.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Home</a>
+        <a href="magic-weapons.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Magic Weapons</a>
+        <a href="relationship-network.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Relationship Network</a>
+        <a href="geographic-map.html" class="mobile-nav-link text-secondary hover:text-secondary transition-colors duration-300 py-2">Geographic Map</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Geographic Atlas Page Content -->
+  <section id="geographic-map" class="min-h-screen pt-24 bg-dark/80">
+    <div class="container mx-auto px-4 py-12">
+      <div class="text-center mb-12">
+        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-kai font-bold text-secondary mb-4">Geographic Map</h2>
+        <p class="text-light/70 max-w-2xl mx-auto">Reconstruct the geographical space in the Investiture of the Gods story and present the geographical context of the plot development</p>
+      </div>
+
+      <!-- Timeline & Map Linkage Section -->
+      <section id="timeline-map" class="mb-12">
+        <div class="grid lg:grid-cols-3 gap-8">
+          <!-- Timeline -->
+          <div class="lg:col-span-1">
+            <div class="bg-dark/50 rounded-xl shadow-lg p-6 border border-gray-800 h-full">
+              <div class="flex items-center mb-6">
+                <i class="fa fa-history text-2xl text-secondary mr-3"></i>
+                <h2 class="text-xl font-bold text-light">Key Events Timeline</h2>
+              </div>
+              <div class="overflow-y-auto max-h-[700px] pr-2" id="timeline-container">
+                <div class="space-y-3">
+                  <!-- Timeline content will be dynamically generated via JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map -->
+          <div class="lg:col-span-2">
+            <div class="bg-dark/50 rounded-xl shadow-lg p-6 border border-gray-800 h-full">
+              <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                  <i class="fa fa-map-marker text-2xl text-secondary mr-3"></i>
+                  <h2 class="text-xl font-bold text-light">Geographic Spatial Map</h2>
+                </div>
+                <div class="flex space-x-2">
+                  <button id="show-locations" class="px-3 py-1 bg-primary text-light rounded-md text-sm hover:bg-primary/90 transition-colors">
+                    <i class="fa fa-map-pin mr-1"></i>Locations
+                  </button>
+                  <button id="show-heatmap" class="px-3 py-1 bg-secondary text-dark rounded-md text-sm hover:bg-secondary/90 transition-colors">
+                    <i class="fa fa-fire mr-1"></i>Heatmap
+                  </button>
+                  <button id="show-paths" class="px-3 py-1 bg-green-600 text-light rounded-md text-sm hover:bg-green-700 transition-colors">
+                    <i class="fa fa-road mr-1"></i>Paths
+                  </button>
+                </div>
+              </div>
+              <div id="map" style="height: 650px; border-radius: 8px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Analysis Section -->
+      <section id="analysis" class="mb-12">
+        <div class="bg-dark/50 rounded-xl shadow-lg p-8 border border-gray-800">
+          <div class="flex items-center mb-6">
+            <i class="fa fa-bar-chart text-2xl text-secondary mr-3"></i>
+            <h2 class="text-2xl font-bold text-light">Data Analysis</h2>
+          </div>
+          <div class="grid md:grid-cols-2 gap-8">
+            <!-- Event Type Distribution -->
+            <div>
+              <h3 class="text-lg font-semibold text-secondary mb-4">Event Type Distribution</h3>
+              <div class="h-80">
+                <canvas id="eventTypeChart"></canvas>
+              </div>
+            </div>
+            <!-- Geographic Location Importance -->
+            <div>
+              <h3 class="text-lg font-semibold text-secondary mb-4">Geographic Location Importance</h3>
+              <div class="h-80">
+                <canvas id="locationImportanceChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Original Text Samples Section -->
+      <section id="sample" class="mb-12">
+        <div class="bg-dark/50 rounded-xl shadow-lg p-8 border border-gray-800">
+          <div class="flex items-center mb-6">
+            <i class="fa fa-file-text text-2xl text-secondary mr-3"></i>
+            <h2 class="text-2xl font-bold text-light">Original Text Samples</h2>
+          </div>
+          <div class="space-y-6 font-song text-lg" id="sample-container">
+            <!-- Original text samples will be dynamically generated via JavaScript -->
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-dark border-t border-gray-800 py-10">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-6 md:mb-0">
+          <div class="flex items-center space-x-2 mb-2">
+            <span class="text-secondary text-xl font-kai font-bold">Investiture of the Gods</span>
+            <span class="text-light/60 text-sm">Digital Humanities Research Platform</span>
+          </div>
+          <p class="text-light/50 text-sm">© 2025 Investiture of the Gods Digital Humanities Project. All Rights Reserved.</p>
+        </div>
+
+        <div class="flex space-x-6">
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-github"></i>
+          </a>
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-weibo"></i>
+          </a>
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-wechat"></i>
+          </a>
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-envelope"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-8 pt-8 border-t border-gray-800 text-center">
+        <p class="text-light/40 text-sm">This platform is for academic research purposes, aiming to promote the digital inheritance and innovation of classical literature</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 内联数据区
+    const timelineEvents = [
+            {"id": 1, "title": "纣王即位", "chapter": 1, "description": "纣王继承帝位，初期还算英明", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 2, "title": "妲己进宫", "chapter": 1, "description": "纣王纳妲己为妃，开始荒废朝政", "type": "宫廷事件", "locations": ["朝歌"]},
+            {"id": 3, "title": "北海叛乱", "chapter": 1, "description": "北海七十二路诸侯袁福通等反叛", "type": "军事事件", "locations": ["北海"]},
+            {"id": 4, "title": "闻仲出征", "chapter": 1, "description": "闻仲奉敕征讨北海叛乱", "type": "军事事件", "locations": ["北海"]},
+            {"id": 5, "title": "比干被害", "chapter": 7, "description": "比干因劝谏纣王被挖心而死", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 6, "title": "文王被囚", "chapter": 8, "description": "西伯侯姬昌被纣王囚禁于羑里", "type": "政治事件", "locations": ["朝歌", "羑里"]},
+            {"id": 7, "title": "文王演易", "chapter": 9, "description": "文王在羑里狱中推演周易八卦", "type": "文化事件", "locations": ["羑里"]},
+            {"id": 8, "title": "文王回西岐", "chapter": 16, "description": "文王被释放返回西岐", "type": "政治事件", "locations": ["西岐"]},
+            {"id": 9, "title": "姜子牙出山", "chapter": 23, "description": "姜子牙在渭水边被文王拜为相", "type": "政治事件", "locations": ["渭水", "西岐"]},
+            {"id": 10, "title": "文王去世", "chapter": 24, "description": "周文王姬昌去世，武王即位", "type": "政治事件", "locations": ["西岐"]},
+            {"id": 11, "title": "武王伐纣准备", "chapter": 28, "description": "周武王开始准备讨伐纣王", "type": "军事事件", "locations": ["西岐"]},
+            {"id": 12, "title": "孟津会盟", "chapter": 48, "description": "武王在孟津大会八百诸侯", "type": "军事事件", "locations": ["孟津"]},
+            {"id": 13, "title": "三谒碧游宫", "chapter": 50, "description": "通天教主三次会见阐教弟子", "type": "宗教事件", "locations": ["碧游宫", "九华山"]},
+            {"id": 14, "title": "诛仙阵大战", "chapter": 78, "description": "阐教与截教在诛仙阵大战", "type": "宗教事件", "locations": ["诛仙阵"]},
+            {"id": 15, "title": "万仙阵大战", "chapter": 84, "description": "阐教与截教在万仙阵决战", "type": "宗教事件", "locations": ["万仙阵"]},
+            {"id": 16, "title": "牧野之战", "chapter": 90, "description": "武王与纣王在牧野决战", "type": "军事事件", "locations": ["牧野"]},
+            {"id": 17, "title": "纣王自焚", "chapter": 91, "description": "纣王在鹿台自焚而死", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 18, "title": "武王主政", "chapter": 92, "description": "周武王入主朝歌，安抚百姓", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 19, "title": "封神大典", "chapter": 99, "description": "姜子牙主持封神大典", "type": "宗教事件", "locations": ["昆仑山"]},
+            {"id": 20, "title": "武王治国", "chapter": 100, "description": "周武王平定天下，建立周朝", "type": "政治事件", "locations": ["西岐", "朝歌"]}
+        ];
+
+    const geospatialData = [
+      {"name": "朝歌", "coordinates": [35.75, 114.17], "description": "商朝都城，纣王统治中心", "importance": 10, "type": "都城"},
+      {"name": "西岐", "coordinates": [34.42, 107.75], "description": "周朝发源地，文王、武王都城", "importance": 10, "type": "都城"},
+      {"name": "昆仑山", "coordinates": [36.00, 80.00], "description": "阐教圣地，元始天尊居所", "importance": 9, "type": "仙山"},
+      {"name": "东海", "coordinates": [34.00, 123.00], "description": "东海龙宫，哪吒闹海发生地", "importance": 8, "type": "海域"},
+      {"name": "北海", "coordinates": [40.00, 118.00], "description": "北方大海，有七十二路诸侯反商", "importance": 7, "type": "海域"},
+      {"name": "南海", "coordinates": [22.10, 113.50], "description": "南方大海，观音菩萨道场", "importance": 6, "type": "海域"},
+      {"name": "西海", "coordinates": [38.00, 90.00], "description": "西方大海", "importance": 5, "type": "海域"},
+      {"name": "终南山", "coordinates": [34.09, 108.95], "description": "道教名山，云中子修炼地", "importance": 8, "type": "仙山"},
+      {"name": "峨眉山", "coordinates": [29.56, 103.48], "description": "截教名山，赵公明修炼地", "importance": 7, "type": "仙山"},
+      {"name": "九华山", "coordinates": [30.54, 117.87], "description": "截教圣地，通天教主居所", "importance": 9, "type": "仙山"},
+      {"name": "陈塘关", "coordinates": [39.08, 117.28], "description": "李靖镇守的关口，哪吒出生地", "importance": 6, "type": "关隘"},
+      {"name": "汜水关", "coordinates": [34.77, 113.82], "description": "商朝重要关隘", "importance": 7, "type": "关隘"},
+      {"name": "潼关", "coordinates": [34.56, 110.15], "description": "通往西岐的重要关隘", "importance": 7, "type": "关隘"},
+      {"name": "孟津", "coordinates": [34.85, 112.40], "description": "武王会盟诸侯之地", "importance": 8, "type": "重要地点"},
+      {"name": "牧野", "coordinates": [35.35, 114.05], "description": "武王伐纣决战之地", "importance": 9, "type": "重要地点"},
+      {"name": "渭水", "coordinates": [34.00, 108.00], "description": "姜子牙钓鱼之地", "importance": 7, "type": "河流"},
+      {"name": "黄河", "coordinates": [35.00, 110.00], "description": "重要河流", "importance": 8, "type": "河流"},
+      {"name": "羑里", "coordinates": [35.94, 114.05], "description": "文王被囚禁之地", "importance": 7, "type": "重要地点"},
+      {"name": "诛仙阵", "coordinates": [35.00, 111.50], "description": "阐教与截教大战之地", "importance": 8, "type": "重要地点"},
+      {"name": "万仙阵", "coordinates": [34.80, 110.80], "description": "阐教与截教决战之地", "importance": 8, "type": "重要地点"}
+    ];
+
+    const keyPaths = {
+      "武王伐纣路线": {
+        "path": [
+          {"location": "西岐", "chapter": 48, "description": "出发地"},
+          {"location": "孟津", "chapter": 48, "description": "会盟诸侯"},
+          {"location": "黄河", "chapter": 50, "description": "渡过黄河"},
+          {"location": "汜水关", "chapter": 60, "description": "攻克汜水关"},
+          {"location": "潼关", "chapter": 70, "description": "攻克潼关"},
+          {"location": "牧野", "chapter": 90, "description": "决战之地"},
+          {"location": "朝歌", "chapter": 91, "description": "攻克朝歌"}
+        ],
+        "color": "#e74c3c"
+      },
+      "封神大战路线": {
+        "path": [
+          {"location": "昆仑山", "chapter": 30, "description": "阐教总部"},
+          {"location": "九华山", "chapter": 50, "description": "截教总部"},
+          {"location": "诛仙阵", "chapter": 78, "description": "第一次大战"},
+          {"location": "万仙阵", "chapter": 84, "description": "决战之地"},
+          {"location": "昆仑山", "chapter": 99, "description": "封神大典"}
+        ],
+        "color": "#3498db"
+      }
+    };
+
+    const regionDensity = {
+      "中原地区": {"center": [34.50,113.50], "density": 85, "locations": ["朝歌", "牧野", "黄河"]},
+      "西部地区": {"center": [34.00,107.00 ], "density": 75, "locations": ["西岐", "渭水", "终南山"]},
+      "东部沿海": {"center": [34.00,120.00 ], "density": 40, "locations": ["东海", "陈塘关"]},
+      "北部地区": {"center": [38.00,115.00 ], "density": 30, "locations": ["北海"]},
+      "南部地区": {"center": [25.00,112.00 ], "density": 20, "locations": ["南海"]},
+      "西南地区": {"center": [30.00,103.00 ], "density": 15, "locations": ["峨眉山"]},
+      "西北地区": {"center": [37.00,90.00], "density": 10, "locations": ["昆仑山", "西海"]},
+      "东南地区": {"center": [30.00,118.00 ], "density": 25, "locations": ["九华山"]}
+    };
+
+    const sampleParagraphs = [
+      {"chapter": 1, "title": "第1回", "text": "纣王七年，春二月，忽报到朝歌，反了北海七十二路诸侯袁福通等。太师闻仲奉敕征北。不题。"},
+      {"chapter": 1, "title": "第1回", "text": "一日，纣王早朝登殿，设聚文武。但见：瑞霭纷纭，金銮殿上坐君王；祥光缭绕，白玉阶前列文武。沉檀香散千条瑞霭，琥珀杯中浮万道金光。正是：金殿晓钟声响玉磬，丹墀风动舞青鸾。天子问道：「朕闻北海袁福通等反叛，卿等有何良策？」言未毕，左班中闪出太师闻仲，俯伏奏曰：「陛下，北海袁福通等反叛，臣请往征之。」纣王大喜曰：「太师肯去，朕复何忧！」即命闻仲为元帅，黄飞虎为先锋，统领十万大军，即日起程。闻仲谢恩出朝，点齐人马，望北海进发。不题。"}
+    ];
+
+    // 全局变量
+    let map;
+    let markers = [];
+    let heatLayer;
+    let pathLayers = [];
+    let currentView = 'locations'; // 默认显示地点
+
+    // 初始化函数
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTimeline();
+      initializeMap();
+      initializeCharts();
+      initializeSampleParagraphs();
+      setupEventListeners();
+      setupNavbarScrollEffect();
+    });
+
+    // 导航栏滚动效果
+    function setupNavbarScrollEffect() {
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 50) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+
+      // 移动端菜单切换
+      const menuToggle = document.getElementById('menu-toggle');
+      const mobileMenu = document.getElementById('mobile-menu');
+
+      menuToggle.addEventListener('click', function() {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
+
+    // 初始化时间轴
+    function initializeTimeline() {
+      const container = document.getElementById('timeline-container');
+
+      timelineEvents.forEach(event => {
+        const eventElement = document.createElement('div');
+        eventElement.className = 'timeline-item p-4 bg-dark/60 rounded-lg border border-gray-700';
+        eventElement.setAttribute('data-locations', JSON.stringify(event.locations));
+
+        eventElement.innerHTML = `
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-semibold text-secondary">${event.title}</h3>
+            <span class="text-xs bg-gray-700 text-light/80 px-2 py-0.5 rounded">第${event.chapter}回</span>
+          </div>
+          <p class="text-sm text-light/80 mb-2">${event.description}</p>
+          <div class="flex items-center text-xs text-light/60">
+            <span class="bg-gray-700 px-2 py-0.5 rounded">${event.type}</span>
+            ${event.locations.length > 0 ? `<span class="ml-2"><i class="fa fa-map-marker mr-1"></i>${event.locations.join(', ')}</span>` : ''}
+          </div>
+        `;
+
+        eventElement.addEventListener('click', function() {
+          // 移除其他事件的激活状态
+          document.querySelectorAll('.timeline-item').forEach(item => {
+            item.classList.remove('active');
+          });
+          // 添加当前事件的激活状态
+          this.classList.add('active');
+
+          // 高亮显示相关地点
+          const locations = JSON.parse(this.getAttribute('data-locations'));
+          highlightLocations(locations);
+        });
+
+        container.appendChild(eventElement);
+      });
+    }
+
+    // 初始化地图
+    function initializeMap() {
+      // 创建地图实例
+      map = L.map('map').setView([35.8617, 104.1954], 4);
+
+      // 添加深色地图图层
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+      // 初始显示地点标记
+      showLocations();
+    }
+
+    // 显示地点标记
+    function showLocations() {
+      // 清除现有标记
+      clearMapLayers();
+
+      // 添加新的地点标记（包含文字标签）
+      geospatialData.forEach(location => {
+        // 创建包含文字的自定义图标
+        const customIcon = L.divIcon({
+          html: `
+            <div style="text-align: center;">
+              <div style="
+                width: ${location.importance * 3}px;
+                height: ${location.importance * 3}px;
+                border-radius: 50%;
+                background-color: ${getColorByType(location.type)};
+                margin: 0 auto;
+                border: 2px solid white;
+                box-shadow: 0 0 5px rgba(0,0,0,0.3);
+              "></div>
+              <div style="
+                font-size: 12px;
+                font-weight: bold;
+                color: #fff;
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+                margin-top: 3px;
+                white-space: nowrap;
+              ">${location.name}</div>
+            </div>
+          `,
+          className: 'custom-location-marker',
+          iconSize: [location.importance * 3 + 20, location.importance * 3 + 30],
+          iconAnchor: [(location.importance * 3 + 20) / 2, location.importance * 3 + 30]
+        });
+
+        // 创建标记并添加到地图
+        const marker = L.marker(location.coordinates, {
+          icon: customIcon,
+          className: 'location-marker'
+        }).addTo(map);
+
+        // 绑定弹窗信息
+        marker.bindPopup(`
+          <div class="text-center">
+            <h3 class="font-bold text-lg mb-1 text-secondary">${location.name}</h3>
+            <p class="text-sm text-dark mb-2">${location.description}</p>
+            <span class="text-xs  px-2 py-0.5 rounded">重要性: ${location.importance}/10</span>
+          </div>
+        `);
+
+        markers.push(marker);
+      });
+
+      currentView = 'locations';
+    }
+
+    // 显示热力图
+    function showHeatmap() {
+      // 清除现有标记
+      clearMapLayers();
+
+      // 准备热力图数据
+      const heatData = [];
+      Object.values(regionDensity).forEach(region => {
+        // 为每个地区添加多个点以增强热力效果
+        for (let i = 0; i < region.density / 5; i++) {
+          const offsetLat = (Math.random() - 0.5) * 1.5;
+          const offsetLng = (Math.random() - 0.5) * 2.5;
+          heatData.push([
+            region.center[1] + offsetLat,
+            region.center[0] + offsetLng,
+            region.density / 100
+          ]);
+        }
+      });
+
+      // 创建热力图层
+      heatLayer = L.heatLayer(heatData, {
+        radius: 35,
+        blur: 20,
+        maxZoom: 10,
+        max: 1.0,
+        gradient: {
+          0.2: '#FFEDA0',
+          0.4: '#FED976',
+          0.6: '#FEB24C',
+          0.8: '#FD8D3C',
+          1.0: '#FC4E2A'
+        }
+      }).addTo(map);
+
+      // 添加地区标签
+      Object.entries(regionDensity).forEach(([name, region]) => {
+        L.marker(region.center)
+          .addTo(map)
+          .bindPopup(`
+            <div class="text-center">
+              <h3 class="font-bold text-lg mb-1 text-secondary">${name}</h3>
+              <p class="text-sm text-dark mb-2">包含地点: ${region.locations.join(', ')}</p>
+              <span class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">情节密度: ${region.density}</span>
+            </div>
+          `);
+      });
+
+      currentView = 'heatmap';
+    }
+
+    // 显示关键路径
+    function showPaths() {
+      // 清除现有标记
+      clearMapLayers();
+
+      // 先显示所有地点标记
+      geospatialData.forEach(location => {
+        const marker = L.circleMarker(location.coordinates, {
+          radius: location.importance,
+          fillColor: getColorByType(location.type),
+          color: '#fff',
+          weight: 1,
+          opacity: 0.7,
+          fillOpacity: 0.5
+        }).addTo(map);
+
+        marker.bindPopup(`
+          <div class="text-center">
+            <h3 class="font-bold text-lg mb-1 text-secondary">${location.name}</h3>
+            <p class="text-sm text-light/80">${location.description}</p>
+          </div>
+        `);
+
+        markers.push(marker);
+      });
+
+      // 绘制关键路径
+      Object.entries(keyPaths).forEach(([pathName, pathData]) => {
+        // 收集路径点坐标
+        const pathCoordinates = [];
+        pathData.path.forEach(point => {
+          const location = geospatialData.find(loc => loc.name === point.location);
+          if (location) {
+            pathCoordinates.push(location.coordinates);
+          }
+        });
+
+        // 创建路径线
+        const pathLine = L.polyline(pathCoordinates, {
+          color: pathData.color,
+          weight: 3,
+          opacity: 0.8,
+          dashArray: '5, 10',
+          className: 'path-animation'
+        }).addTo(map);
+
+        pathLayers.push(pathLine);
+
+        // 添加路径标签
+        const midPoint = pathCoordinates[Math.floor(pathCoordinates.length / 2)];
+        L.marker(midPoint, {
+          icon: L.divIcon({
+            html: `<div class="bg-dark text-light px-2 py-1 rounded-md text-sm font-semibold shadow-md" style="border: 2px solid ${pathData.color};">${pathName}</div>`,
+            className: 'path-label',
+            iconSize: [150, 30]
+          })
+        }).addTo(map);
+      });
+
+      currentView = 'paths';
+    }
+
+    // 清除地图图层
+    function clearMapLayers() {
+      // 清除标记
+      markers.forEach(marker => map.removeLayer(marker));
+      markers = [];
+
+      // 清除热力图层
+      if (heatLayer) {
+        map.removeLayer(heatLayer);
+        heatLayer = null;
+      }
+
+      // 清除路径图层
+      pathLayers.forEach(path => map.removeLayer(path));
+      pathLayers = [];
+    }
+
+    // 根据地点类型获取颜色
+    function getColorByType(type) {
+      switch(type) {
+        case '都城': return '#9D2933'; // 红色
+        case '仙山': return '#2ecc71'; // 绿色
+        case '海域': return '#3498db'; // 蓝色
+        case '关隘': return '#f39c12'; // 橙色
+        case '重要地点': return '#9b59b6'; // 紫色
+        case '河流': return '#1abc9c'; // 青绿色
+        default: return '#95a5a6'; // 灰色
+      }
+    }
+
+    // 高亮显示指定地点
+    function highlightLocations(locationNames) {
+      // 缩放到第一个地点
+      const firstLocation = geospatialData.find(loc => locationNames.includes(loc.name));
+      if (firstLocation) {
+        map.setView(firstLocation.coordinates, 6);
+      }
+
+      // 根据当前视图模式处理
+      if (currentView === 'locations') {
+        // 在地点视图下，高亮相关地点
+        markers.forEach(marker => {
+          const markerLocation = geospatialData.find(loc =>
+            loc.coordinates[0] === marker.getLatLng().lat &&
+            loc.coordinates[1] === marker.getLatLng().lng
+          );
+
+          if (markerLocation && locationNames.includes(markerLocation.name)) {
+            marker._icon.style.transform = 'scale(1.2)';
+            marker.openPopup();
+          } else {
+            marker._icon.style.transform = 'scale(1)';
+          }
+        });
+      } else if (currentView === 'heatmap' || currentView === 'paths') {
+        // 在热力图或路径视图下，切换到地点视图并高亮
+        showLocations();
+
+        // 延迟执行以确保标记已添加
+        setTimeout(() => {
+          markers.forEach(marker => {
+            const markerLocation = geospatialData.find(loc =>
+              loc.coordinates[0] === marker.getLatLng().lat &&
+              loc.coordinates[1] === marker.getLatLng().lng
+            );
+
+            if (markerLocation && locationNames.includes(markerLocation.name)) {
+              marker._icon.style.transform = 'scale(1.2)';
+              marker.openPopup();
+            }
+          });
+        }, 300);
+      }
+    }
+
+    // 初始化图表
+    function initializeCharts() {
+      // 事件类型分布图表
+      const eventTypeCtx = document.getElementById('eventTypeChart').getContext('2d');
+      const eventTypeCounts = {};
+      timelineEvents.forEach(event => {
+        eventTypeCounts[event.type] = (eventTypeCounts[event.type] || 0) + 1;
+      });
+
+      new Chart(eventTypeCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(eventTypeCounts),
+          datasets: [{
+            data: Object.values(eventTypeCounts),
+            backgroundColor: [
+              '#3b82f6', // 蓝色 - 政治事件
+              '#ef4444', // 红色 - 军事事件
+              '#8b5cf6', // 紫色 - 宗教事件
+              '#10b981', // 绿色 - 文化事件
+              '#f59e0b'  // 黄色 - 宫廷事件
+            ],
+            borderWidth: 2,
+            borderColor: '#1C1C1C'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#F5F1E9',
+                padding: 20,
+                usePointStyle: true
+              }
+            }
+          }
+        }
+      });
+
+      // 地理地点重要性图表
+      const locationImportanceCtx = document.getElementById('locationImportanceChart').getContext('2d');
+      const topLocations = [...geospatialData]
+        .sort((a, b) => b.importance - a.importance)
+        .slice(0, 10);
+
+      new Chart(locationImportanceCtx, {
+        type: 'bar',
+        data: {
+          labels: topLocations.map(loc => loc.name),
+          datasets: [{
+            label: '重要性评分',
+            data: topLocations.map(loc => loc.importance),
+            backgroundColor: topLocations.map(loc => getColorByType(loc.type)),
+            borderRadius: 4,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#1C1C1C',
+              titleColor: '#D4AF37',
+              bodyColor: '#F5F1E9'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 10,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: '#F5F1E9'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: '#F5F1E9'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 初始化原文样例
+    function initializeSampleParagraphs() {
+      const container = document.getElementById('sample-container');
+
+      sampleParagraphs.forEach(paragraph => {
+        const paragraphElement = document.createElement('div');
+        paragraphElement.className = 'p-4 bg-dark/60 rounded-lg border border-gray-700';
+        paragraphElement.innerHTML = `
+          <h3 class="font-kai font-bold text-secondary text-lg mb-3">${paragraph.title}</h3>
+          <p class="text-light/80 leading-relaxed">${paragraph.text}</p>
+        `;
+        container.appendChild(paragraphElement);
+      });
+    }
+
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 地图视图切换按钮
+      document.getElementById('show-locations').addEventListener('click', showLocations);
+      document.getElementById('show-heatmap').addEventListener('click', showHeatmap);
+      document.getElementById('show-paths').addEventListener('click', showPaths);
+
+      // 平滑滚动
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            window.scrollTo({
+              top: targetElement.offsetTop - 80,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>

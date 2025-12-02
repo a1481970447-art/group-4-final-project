@@ -1,0 +1,22 @@
+const timelineEvents = [
+            {"id": 1, "title": "纣王即位", "chapter": 1, "description": "纣王继承帝位，初期还算英明", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 2, "title": "妲己进宫", "chapter": 1, "description": "纣王纳妲己为妃，开始荒废朝政", "type": "宫廷事件", "locations": ["朝歌"]},
+            {"id": 3, "title": "北海叛乱", "chapter": 1, "description": "北海七十二路诸侯袁福通等反叛", "type": "军事事件", "locations": ["北海"]},
+            {"id": 4, "title": "闻仲出征", "chapter": 1, "description": "闻仲奉敕征讨北海叛乱", "type": "军事事件", "locations": ["北海"]},
+            {"id": 5, "title": "比干被害", "chapter": 7, "description": "比干因劝谏纣王被挖心而死", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 6, "title": "文王被囚", "chapter": 8, "description": "西伯侯姬昌被纣王囚禁于羑里", "type": "政治事件", "locations": ["朝歌", "羑里"]},
+            {"id": 7, "title": "文王演易", "chapter": 9, "description": "文王在羑里狱中推演周易八卦", "type": "文化事件", "locations": ["羑里"]},
+            {"id": 8, "title": "文王回西岐", "chapter": 16, "description": "文王被释放返回西岐", "type": "政治事件", "locations": ["西岐"]},
+            {"id": 9, "title": "姜子牙出山", "chapter": 23, "description": "姜子牙在渭水边被文王拜为相", "type": "政治事件", "locations": ["渭水", "西岐"]},
+            {"id": 10, "title": "文王去世", "chapter": 24, "description": "周文王姬昌去世，武王即位", "type": "政治事件", "locations": ["西岐"]},
+            {"id": 11, "title": "武王伐纣准备", "chapter": 28, "description": "周武王开始准备讨伐纣王", "type": "军事事件", "locations": ["西岐"]},
+            {"id": 12, "title": "孟津会盟", "chapter": 48, "description": "武王在孟津大会八百诸侯", "type": "军事事件", "locations": ["孟津"]},
+            {"id": 13, "title": "三谒碧游宫", "chapter": 50, "description": "通天教主三次会见阐教弟子", "type": "宗教事件", "locations": ["碧游宫", "九华山"]},
+            {"id": 14, "title": "诛仙阵大战", "chapter": 78, "description": "阐教与截教在诛仙阵大战", "type": "宗教事件", "locations": ["诛仙阵"]},
+            {"id": 15, "title": "万仙阵大战", "chapter": 84, "description": "阐教与截教在万仙阵决战", "type": "宗教事件", "locations": ["万仙阵"]},
+            {"id": 16, "title": "牧野之战", "chapter": 90, "description": "武王与纣王在牧野决战", "type": "军事事件", "locations": ["牧野"]},
+            {"id": 17, "title": "纣王自焚", "chapter": 91, "description": "纣王在鹿台自焚而死", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 18, "title": "武王主政", "chapter": 92, "description": "周武王入主朝歌，安抚百姓", "type": "政治事件", "locations": ["朝歌"]},
+            {"id": 19, "title": "封神大典", "chapter": 99, "description": "姜子牙主持封神大典", "type": "宗教事件", "locations": ["昆仑山"]},
+            {"id": 20, "title": "武王治国", "chapter": 100, "description": "周武王平定天下，建立周朝", "type": "政治事件", "locations": ["西岐", "朝歌"]}
+        ];

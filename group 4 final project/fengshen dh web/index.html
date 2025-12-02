@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investiture of the Gods Digital Humanities Research Platform</title>
+  <!-- External resources -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+
+  <!-- Tailwind configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#9D2933', // Chinese red
+            secondary: '#D4AF37', // Gold
+            dark: '#1C1C1C', // Dark gray
+            light: '#F5F1E9', // Off-white
+          },
+          fontFamily: {
+            song: ['"SimSun"', '"STSong"', 'serif'],
+            kai: ['"KaiTi"', '"STKaiti"', 'serif'],
+            sans: ['"Noto Sans SC"', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+
+  <!-- Custom utilities -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+      .bg-texture {
+        background-image: url('https://picsum.photos/id/175/1000/1000');
+        background-blend-mode: overlay;
+        background-size: cover;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+  </style>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-dark text-light font-sans overflow-x-hidden">
+  <!-- Navigation bar -->
+  <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 bg-transparent">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="text-secondary text-2xl font-kai font-bold">Investiture of the Gods</span>
+        <span class="hidden md:inline-block text-light/80 text-sm">Digital Humanities Research Platform</span>
+      </a>
+
+      <!-- Desktop navigation -->
+      <div class="hidden md:flex space-x-8">
+        <a href="index.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Home</a>
+        <a href="magic-weapons.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Magic Weapons</a>
+        <a href="relationship-network.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Relationship Network</a>
+        <a href="geographic-map.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Geographic Map</a>
+      </div>
+
+      <!-- Mobile menu button -->
+      <button id="menu-toggle" class="md:hidden text-light text-2xl">
+        <i class="fa fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- Mobile navigation menu -->
+    <div id="mobile-menu" class="md:hidden bg-dark/95 hidden absolute w-full">
+      <div class="container mx-auto px-4 py-4 flex flex-col space-y-4">
+        <a href="index.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Home</a>
+        <a href="magic-weapons.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Magic Weapons</a>
+        <a href="relationship-network.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Relationship Network</a>
+        <a href="geographic-map.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2">Geographic Map</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Homepage content -->
+  <section id="home" class="min-h-screen pt-24">
+    <!-- Hero section -->
+    <div class="relative h-[80vh] bg-texture bg-dark/80 flex items-center justify-center overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-dark/40 to-dark/90 z-10"></div>
+      <div class="container mx-auto px-4 z-20 text-center">
+        <h1 class="text-[clamp(2.5rem,6vw,4.5rem)] font-kai font-bold text-secondary mb-6 text-shadow">Investiture of the Gods</h1>
+        <p class="text-[clamp(1.2rem,3vw,1.8rem)] font-song text-light/90 max-w-3xl mx-auto mb-10">Classical Mythology Research and Visualization Platform</p>
+        <div class="flex flex-wrap justify-center gap-4">
+          <a href="magic-weapons.html" class="btn-nav bg-primary hover:bg-primary/90 text-light px-8 py-3 rounded-md transition-all duration-300 hover:shadow-lg hover:shadow-primary/20">
+            Magic Weapons Encyclopedia
+          </a>
+          <a href="relationship-network.html" class="btn-nav bg-transparent border border-secondary text-secondary hover:bg-secondary/10 px-8 py-3 rounded-md transition-all duration-300">
+            Relationship Network
+          </a>
+        </div>
+      </div>
+
+      <!-- Decorative element -->
+      <div class="absolute bottom-10 left-0 right-0 flex justify-center animate-bounce">
+        <i class="fa fa-angle-down text-secondary text-3xl"></i>
+      </div>
+    </div>
+
+    <!-- Features section -->
+    <div class="py-20 bg-dark">
+      <div class="container mx-auto px-4">
+        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-kai font-bold text-secondary text-center mb-16">Research Features</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Magic Weapons card -->
+          <div class="bg-dark/50 border border-gray-800 rounded-lg p-8 hover-scale ink-border">
+            <div class="text-secondary text-4xl mb-6 text-center">
+              <i class="fa fa-magic"></i>
+            </div>
+            <h3 class="text-xl font-kai font-bold text-secondary mb-4 text-center">Magic Weapons Encyclopedia</h3>
+            <p class="text-light/70 mb-6 text-center">Systematically organize various magic weapons and artifacts in "Investiture of the Gods", including attributes, holders, function descriptions, and analysis of cultural connotations, building a digital magic weapon knowledge base.</p>
+            <div class="text-center">
+              <a href="magic-weapons.html" class="btn-nav inline-block text-secondary hover:text-secondary/80 transition-colors duration-300">
+                View Details <i class="fa fa-arrow-right ml-2"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Relationship Network card -->
+          <div class="bg-dark/50 border border-gray-800 rounded-lg p-8 hover-scale ink-border">
+            <div class="text-secondary text-4xl mb-6 text-center">
+              <i class="fa fa-sitemap"></i>
+            </div>
+            <h3 class="text-xl font-kai font-bold text-secondary mb-4 text-center">Relationship Network</h3>
+            <p class="text-light/70 mb-6 text-center">Using digital humanities technology to visually present the complex relationship network of hundreds of characters in the Investiture of the Gods world, revealing character connections and story development脉络.</p>
+            <div class="text-center">
+              <a href="relationship-network.html" class="btn-nav inline-block text-secondary hover:text-secondary/80 transition-colors duration-300">
+                View Details <i class="fa fa-arrow-right ml-2"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Geographic Map card -->
+          <div class="bg-dark/50 border border-gray-800 rounded-lg p-8 hover-scale ink-border">
+            <div class="text-secondary text-4xl mb-6 text-center">
+              <i class="fa fa-map-o"></i>
+            </div>
+            <h3 class="text-xl font-kai font-bold text-secondary mb-4 text-center">Geographic Map</h3>
+            <p class="text-light/70 mb-6 text-center">Reconstruct the geographical space in the Investiture of the Gods story, marking important locations, battlefields, immortal mountains and temples, showing the geographical context and spatial narrative of the story development.</p>
+            <div class="text-center">
+              <a href="geographic-map.html" class="btn-nav inline-block text-secondary hover:text-secondary/80 transition-colors duration-300">
+                View Details <i class="fa fa-arrow-right ml-2"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+  <!-- Magic Weapon Details Modal -->
+  <div id="magic-modal" class="fixed inset-0 bg-dark/90 z-50 flex items-center justify-center hidden">
+    <div class="bg-dark border border-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 ink-border">
+      <div class="flex justify-between items-start mb-6">
+        <h3 class="text-2xl font-kai font-bold text-secondary" id="modal-title">Magic Weapon Name</h3>
+        <button id="close-modal" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="overflow-hidden rounded-lg">
+          <img id="modal-image" src="https://picsum.photos/id/111/800/600" alt="Magic Weapon Image" class="w-full h-auto">
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <h4 class="text-light font-medium mb-2">Basic Information</h4>
+            <ul class="space-y-2 text-light/70">
+              <li class="flex">
+                <span class="w-24 text-light/50">Type:</span>
+                <span id="modal-type">Offensive</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

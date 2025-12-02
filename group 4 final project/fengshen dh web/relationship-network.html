@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Character Relationship Network - Investiture of the Gods Digital Humanities Research Platform</title>
+  <!-- External resources -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="./js/nodes_data.js"></script>
+    <script src="./js/links_data.js"></script>
+
+
+  <!-- Tailwind configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#9D2933', // Chinese red
+            secondary: '#D4AF37', // Gold
+            dark: '#1C1C1C', // Dark gray
+            light: '#F5F1E9', // Off-white
+          },
+          fontFamily: {
+            song: ['"SimSun"', '"STSong"', 'serif'],
+            kai: ['"KaiTi"', '"STKaiti"', 'serif'],
+            sans: ['"Noto Sans SC"', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+
+  <!-- Custom utilities -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+      .bg-texture {
+        background-image: url('https://picsum.photos/id/175/1000/1000');
+        background-blend-mode: overlay;
+        background-size: cover;
+      }
+    }
+  </style>
+
+  <style>
+    /* Relationship graph styles */
+    #graphContainer {
+      width: 100%;
+      height: 700px;
+      background-color: rgba(28, 28, 28, 0.8);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+    .node circle {
+      stroke: #fff;
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .node text {
+      font-size: 12px;
+      fill: #F5F1E9;
+      text-anchor: middle;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    .link {
+      stroke: #999;
+      stroke-opacity: 0.6;
+      transition: all 0.3s ease;
+    }
+    /* Central character styles */
+    .node.highlighted circle {
+      stroke: #ff6b6b;
+      stroke-width: 3px;
+      r: 12;
+      fill: #9D2933;
+    }
+    .node.highlighted text {
+      font-weight: bold;
+      font-size: 14px;
+      fill: #D4AF37;
+    }
+    /* Related characters styles */
+    .node.related circle {
+      stroke: #4ecdc4;
+      stroke-width: 2.5px;
+      r: 8;
+    }
+    .node.related text {
+      font-weight: 500;
+      fill: #4ecdc4;
+    }
+    /* Unrelated characters styles */
+    .node.unrelated circle {
+      opacity: 0.2;
+    }
+    .node.unrelated text {
+      opacity: 0.2;
+    }
+    /* Relationship line styles */
+    .link.related {
+      stroke: #4ecdc4;
+      stroke-opacity: 0.9;
+      stroke-width: 2;
+    }
+    .link.unrelated {
+      stroke: rgba(28, 28, 28, 0.8);
+      stroke-opacity: 0;
+    }
+    .tooltip {
+      position: absolute;
+      background-color: rgba(0,0,0,0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 10;
+    }
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background-color: rgba(28, 28, 28, 0.9);
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.5);
+      font-size: 12px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: #F5F1E9;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+      border-radius: 3px;
+    }
+    /* Zoom info style */
+    .zoom-info {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(28, 28, 28, 0.8);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      color: #F5F1E9;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+    /* Controls area style */
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #characterSelect {
+      padding: 8px 12px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #D4AF37;
+      background-color: rgba(28, 28, 28, 0.7);
+      color: #F5F1E9;
+      width: 250px;
+    }
+    #resetBtn {
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #D4AF37;
+      background-color: #9D2933;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #resetBtn:hover {
+      background-color: #7a2128;
+      transform: translateY(-2px);
+    }
+  </style>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-dark text-light font-sans overflow-x-hidden">
+  <!-- Navigation bar -->
+  <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 bg-transparent">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="text-secondary text-2xl font-kai font-bold">Investiture of the Gods</span>
+        <span class="hidden md:inline-block text-light/80 text-sm">Digital Humanities Research Platform</span>
+      </a>
+
+      <!-- Desktop navigation -->
+      <div class="hidden md:flex space-x-8">
+        <a href="index.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Home</a>
+        <a href="magic-weapons.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Magic Weapons</a>
+        <a href="relationship-network.html" class="nav-link text-secondary hover:text-secondary transition-colors duration-300 font-medium">Relationship Network</a>
+        <a href="geographic-map.html" class="nav-link text-light hover:text-secondary transition-colors duration-300 font-medium">Geographic Map</a>
+      </div>
+
+      <!-- Mobile menu button -->
+      <button id="menu-toggle" class="md:hidden text-light text-2xl">
+        <i class="fa fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- Mobile navigation menu -->
+    <div id="mobile-menu" class="md:hidden bg-dark/95 hidden absolute w-full">
+      <div class="container mx-auto px-4 py-4 flex flex-col space-y-4">
+        <a href="index.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Home</a>
+        <a href="magic-weapons.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Magic Weapons</a>
+        <a href="relationship-network.html" class="mobile-nav-link text-secondary hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-800">Relationship Network</a>
+        <a href="geographic-map.html" class="mobile-nav-link text-light hover:text-secondary transition-colors duration-300 py-2">Geographic Map</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Relationship network page content -->
+  <section id="relationship-network" class="min-h-screen pt-24 bg-dark/80">
+    <div class="container mx-auto px-4 py-12">
+      <div class="text-center mb-12">
+        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-kai font-bold text-secondary mb-4">Character Relationship Network</h2>
+        <p class="text-light/70 max-w-2xl mx-auto">Digitally presenting the complex relationships between characters in the world of Investiture of the Gods, revealing the interpersonal context behind the story</p>
+      </div>
+
+      <!-- Relationship graph content -->
+      <div class="mb-6">
+        <div class="controls">
+          <label for="characterSelect" class="text-light/80">Select central character:</label>
+          <select id="characterSelect">
+            <option value="">Please select a character</option>
+            <!-- Character options will be generated dynamically via JavaScript -->
+          </select>
+          <button id="resetBtn">Reset View</button>
+        </div>
+
+        <div id="graphContainer">
+          <div class="zoom-info">Tip: Use mouse wheel to zoom, hold mouse to drag and pan</div>
+          <div class="tooltip" id="tooltip"></div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #9D2933;"></div>
+              <span>Central Character</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #4ecdc4;"></div>
+              <span>Related Characters</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #999; opacity: 0.2;"></div>
+              <span>Other Characters</span>
+            </div>
+            <div class="legend-item">
+              <div style="width: 30px; height: 3px; background-color: #4ecdc4; margin-right: 5px;"></div>
+              <span>Related Relationships</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 bg-dark/50 p-6 rounded-lg border border-gray-800">
+        <h3 class="text-secondary font-kai text-xl mb-4">Usage Instructions</h3>
+        <ul class="list-disc pl-5 text-light/80 space-y-2">
+          <li>Select a character from the dropdown menu to set it as the center and highlight its related characters</li>
+          <li>Clicking a node can also set it as the central character</li>
+          <li>Use mouse wheel to zoom the view, hold left mouse button to drag and pan</li>
+          <li>Drag nodes to adjust their positions</li>
+          <li>Click the "Reset View" button to restore the initial state</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-dark border-t border-gray-800 py-10">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-6 md:mb-0">
+          <div class="flex items-center space-x-2 mb-2">
+            <span class="text-secondary text-xl font-kai font-bold">Investiture of the Gods</span>
+            <span class="text-light/60 text-sm">Digital Humanities Research Platform</span>
+          </div>
+          <p class="text-light/50 text-sm">© 2025 Investiture of the Gods Digital Humanities Project. All rights reserved.</p>
+        </div>
+
+        <div class="flex space-x-6">
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-github"></i>
+          </a>
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-weibo"></i>
+          </a>
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-wechat"></i>
+          </a>
+          <a href="#" class="text-light/60 hover:text-secondary transition-colors duration-300 text-xl">
+            <i class="fa fa-envelope"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-8 pt-8 border-t border-gray-800 text-center">
+        <p class="text-light/40 text-sm">This platform is for academic research purposes, aiming to promote the digital inheritance and innovation of classical literature</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    document.getElementById('menu-toggle').addEventListener('click', function() {
+      const mobileMenu = document.getElementById('mobile-menu');
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // Navigation bar scroll effect
+    window.addEventListener('scroll', function() {
+      const navbar = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        navbar.classList.add('bg-dark/95', 'shadow-md');
+        navbar.classList.remove('bg-transparent');
+      } else {
+        navbar.classList.remove('bg-dark/95', 'shadow-md');
+        navbar.classList.add('bg-transparent');
+      }
+    });
+
+    // Initialize graph
+    function initGraph() {
+      // Get container dimensions
+      const container = document.getElementById('graphContainer');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // Clear existing SVG
+      d3.select('#graphContainer').select('svg').remove();
+
+      // Create SVG
+      const svg = d3.select('#graphContainer')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+      // Add zoom functionality
+      const zoom = d3.zoom()
+        .scaleExtent([0.1, 3]) // Zoom range
+        .on('zoom', (event) => {
+          g.attr('transform', event.transform);
+        });
+
+      svg.call(zoom);
+
+      // Create a g element as zoom container
+      const g = svg.append('g');
+
+      // Create force-directed graph
+      const simulation = d3.forceSimulation(nodesData)
+        .force('link', d3.forceLink(linksData).id(d => d.id).distance(100))
+        .force('charge', d3.forceManyBody().strength(-300))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collide', d3.forceCollide().radius(40));
+
+      // Create connecting lines
+      const link = g.append('g')
+        .selectAll('line')
+        .data(linksData)
+        .enter().append('line')
+        .attr('class', 'link')
+        .attr('stroke-width', d => Math.sqrt(d.value));
+
+      // Create node groups
+      const node = g.append('g')
+        .selectAll('.node')
+        .data(nodesData)
+        .enter().append('g')
+        .attr('class', 'node')
+        .call(d3.drag()
+          .on('start', dragstarted)
+          .on('drag', dragged)
+          .on('end', dragended));
+
+      // Add node circles
+      node.append('circle')
+        .attr('r', 6)
+        .attr('fill', '#3498db');
+
+      // Add node text
+      node.append('text')
+        .attr('dy', 20)
+        .text(d => d.name);
+
+      // Add tooltip events
+      node.on('mouseover', (event, d) => {
+          const tooltip = document.getElementById('tooltip');
+          tooltip.innerHTML = d.name;
+          tooltip.style.opacity = 1;
+          tooltip.style.left = (event.pageX + 10) + 'px';
+          tooltip.style.top = (event.pageY - 20) + 'px';
+        })
+        .on('mousemove', (event) => {
+          const tooltip = document.getElementById('tooltip');
+          tooltip.style.left = (event.pageX + 10) + 'px';
+          tooltip.style.top = (event.pageY - 20) + 'px';
+        })
+        .on('mouseout', () => {
+          const tooltip = document.getElementById('tooltip');
+          tooltip.style.opacity = 0;
+        })
+        .on('click', (event, d) => {
+          highlightConnections(d.id);
+          // Update dropdown selection
+          document.getElementById('characterSelect').value = d.id;
+        });
+
+      // Update force-directed graph
+      simulation.on('tick', () => {
+        link
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
+
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
+      });
+
+      // Drag functions
+      function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        // Keep position after dragging
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      // Generate character selection dropdown
+      const select = document.getElementById('characterSelect');
+      // Clear existing options (keep the first "Please select a character")
+      while (select.options.length > 1) {
+        select.remove(1);
+      }
+
+      nodesData.forEach(node => {
+        const option = document.createElement('option');
+        option.value = node.id;
+        option.textContent = node.name;
+        select.appendChild(option);
+      });
+
+      // Character selection event
+      select.addEventListener('change', function() {
+        const selectedId = this.value;
+        if (selectedId) {
+          highlightConnections(selectedId);
+        } else {
+          resetHighlight();
+        }
+      });
+
+      // Reset button event
+      document.getElementById('resetBtn').addEventListener('click', function() {
+        resetHighlight();
+        select.value = '';
+        // Reset zoom and pan
+        svg.transition().duration(750).call(
+          zoom.transform, d3.zoomIdentity
+        );
+        // Reset node positions
+        nodesData.forEach(d => {
+          d.fx = null;
+          d.fy = null;
+        });
+        simulation.alpha(0.3).restart();
+      });
+
+      // Highlight related nodes and connections
+      function highlightConnections(nodeId) {
+        // Reset all highlights
+        resetHighlight();
+
+        // Find nodes directly connected to selected node
+        const connectedNodeIds = new Set();
+        connectedNodeIds.add(nodeId);
+
+        linksData.forEach(link => {
+          if (link.source.id === nodeId) {
+            connectedNodeIds.add(link.target.id);
+          } else if (link.target.id === nodeId) {
+            connectedNodeIds.add(link.source.id);
+          }
+        });
+
+        // Highlight central node
+        node.filter(d => d.id === nodeId)
+          .classed('highlighted', true);
+
+        // Highlight related nodes
+        node.filter(d => connectedNodeIds.has(d.id) && d.id !== nodeId)
+          .classed('related', true);
+
+        // Fade unrelated nodes
+        node.filter(d => !connectedNodeIds.has(d.id))
+          .classed('unrelated', true);
+
+        // Highlight related connections
+        link.filter(d =>
+            (d.source.id === nodeId && connectedNodeIds.has(d.target.id)) ||
+            (d.target.id === nodeId && connectedNodeIds.has(d.source.id))
+          )
+          .classed('related', true);
+
+        // Hide unrelated connections
+        link.filter(d =>
+            !(d.source.id === nodeId && connectedNodeIds.has(d.target.id)) &&
+            !(d.target.id === nodeId && connectedNodeIds.has(d.source.id))
+          )
+          .classed('unrelated', true);
+      }
+
+      // Reset highlights
+      function resetHighlight() {
+        node.classed('highlighted', false)
+          .classed('related', false)
+          .classed('unrelated', false);
+
+        link.classed('related', false)
+          .classed('unrelated', false);
+      }
+    }
+
+    // Initialize graph when page loads
+    window.addEventListener('load', initGraph);
+
+    // Redraw graph when window resizes
+    window.addEventListener('resize', function() {
+      initGraph();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+/* 基础动画定义 */
+.fade-in {
+  animation: fadeIn 0.8s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hover-scale {
+  transition: transform 0.3s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.03);
+}
+
+/* 页面过渡效果 */
+.page {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+.page.active {
+  display: block;
+  opacity: 1;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+/* 导航栏滚动效果 */
+.navbar-scrolled {
+  background-color: rgba(28, 28, 28, 0.95) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 水墨风格边框 */
+.ink-border {
+  position: relative;
+}
+.ink-border::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  pointer-events: none;
+}
+
+/* 加载动画 */
+.loader {
+  border-top-color: #D4AF37;
+  animation: spinner 0.8s linear infinite;
+}
+@keyframes spinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
